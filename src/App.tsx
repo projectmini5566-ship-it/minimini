@@ -13,6 +13,7 @@ import { StudentLogin } from './StudentLogin';
 import { Student, SubjectConfig, Test, AppSettings, DEFAULT_SUBJECTS, DEFAULT_SETTINGS } from './types';
 import { motion, AnimatePresence } from 'motion/react';
 import { SettingsView } from './SettingsView';
+import { CheckoutForm } from './CheckoutForm';
 
 const INITIAL_STUDENTS: Student[] = [
   {
@@ -235,6 +236,8 @@ export default function App() {
             onLogout={handleLogout}
           />
         );
+      case 'checkout':
+        return <CheckoutForm />;
       default:
         return (
           <StudentPulse 

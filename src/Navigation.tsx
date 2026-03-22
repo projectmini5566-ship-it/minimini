@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Table2, PieChart, Settings, Lock } from 'lucide-react';
+import { LayoutDashboard, Table2, PieChart, Settings, Lock, ShoppingCart } from 'lucide-react';
 import { cn } from './lib/utils';
 
 interface NavItemProps {
@@ -62,6 +62,12 @@ export const Sidebar = ({ activeTab, setActiveTab, isLoggedIn, isStudentLoggedIn
           onClick={() => setActiveTab('graph')} 
           isLocked={!isAnyLoggedIn}
         />
+        <NavItem 
+          icon={ShoppingCart} 
+          label="Checkout" 
+          active={activeTab === 'checkout'} 
+          onClick={() => setActiveTab('checkout')} 
+        />
       </nav>
 
       <div className="pt-6 border-t border-zinc-100">
@@ -116,6 +122,13 @@ export const BottomNav = ({ activeTab, setActiveTab, isLoggedIn, isStudentLogged
             <Lock size={8} className="text-zinc-400" />
           </div>
         )}
+      </button>
+      <button 
+        onClick={() => setActiveTab('checkout')}
+        className={cn("flex flex-col items-center gap-1 relative", activeTab === 'checkout' ? "text-black" : "text-zinc-400")}
+      >
+        <ShoppingCart size={20} />
+        <span className="text-[10px] font-medium">Checkout</span>
       </button>
       <button 
         onClick={() => setActiveTab('settings')}
