@@ -131,8 +131,8 @@ export const TeacherInput = ({
       id: Math.random().toString(36).substr(2, 9),
       name: 'New Test',
       subjectId: localSubjects[0]?.id || '',
-      maxMarks: 100,
-      date: new Date().toISOString(),
+      maxMarks: localSettings.defaultTestMaxMarks || 100,
+      date: new Date().toISOString().split('T')[0],
       marks: {}
     };
     const updated = [...localTests, newTest];
@@ -625,6 +625,15 @@ export const TeacherInput = ({
                         className="w-full bg-zinc-50 border-none focus:ring-2 focus:ring-black rounded-lg px-3 py-2 font-mono"
                         value={localTests.find(t => t.id === activeTestId)?.maxMarks || 0}
                         onChange={(e) => handleTestChange(activeTestId, 'maxMarks', parseInt(e.target.value) || 0)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold uppercase text-zinc-400">Test Date</label>
+                      <input 
+                        type="date"
+                        className="w-full bg-zinc-50 border-none focus:ring-2 focus:ring-black rounded-lg px-3 py-2 font-mono"
+                        value={localTests.find(t => t.id === activeTestId)?.date.split('T')[0] || ''}
+                        onChange={(e) => handleTestChange(activeTestId, 'date', e.target.value)}
                       />
                     </div>
                   </div>

@@ -40,6 +40,7 @@ export interface AppSettings {
   facultyPassword: string;
   facultyMobile: string;
   maxSportsMarks: number;
+  defaultTestMaxMarks: number;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -49,5 +50,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   facultyUsername: 'ghadigaonkar sir',
   facultyPassword: '5566',
   facultyMobile: '9876543210',
-  maxSportsMarks: 100
+  maxSportsMarks: 100,
+  defaultTestMaxMarks: 100
 };

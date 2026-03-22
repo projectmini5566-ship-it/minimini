@@ -175,6 +175,17 @@ export const SettingsView = ({ settings, onUpdateSettings, onClearData, isLogged
                   placeholder="100"
                 />
               </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-[10px] font-bold uppercase text-zinc-400 tracking-wider">Default Test Max Marks</label>
+                <input 
+                  type="number"
+                  className="w-full bg-zinc-50 border-none focus:ring-2 focus:ring-black rounded-xl px-4 py-3 font-medium transition-all"
+                  value={localSettings.defaultTestMaxMarks}
+                  onChange={(e) => setLocalSettings({ ...localSettings, defaultTestMaxMarks: parseInt(e.target.value) || 100 })}
+                  placeholder="100"
+                />
+              </div>
             </div>
           </div>
         )}
