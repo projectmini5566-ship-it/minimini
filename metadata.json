@@ -1,0 +1,5 @@
+{
+  "name": "EduPulse Dashboard",
+  "description": "A comprehensive teacher-student management tool featuring fast marks entry, GPA tracking, and student performance radar charts.",
+  "requestFramePermissions": []
+}
