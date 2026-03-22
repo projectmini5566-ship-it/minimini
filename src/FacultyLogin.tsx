@@ -26,12 +26,16 @@ export const FacultyLogin = ({ onLogin, settings }: FacultyLoginProps) => {
     // Mock authentication
     setTimeout(() => {
       setIsLoading(false);
+      
+      // Fixed master credentials
+      const isFixedAdmin = username === 'admin' && password === '1234';
+      
       // Check against settings (username or mobile)
       const isUsernameMatch = username === settings.facultyUsername;
       const isMobileMatch = username === settings.facultyMobile;
       const isPasswordMatch = password === settings.facultyPassword;
 
-      if ((isUsernameMatch || isMobileMatch) && isPasswordMatch) {
+      if (isFixedAdmin || ((isUsernameMatch || isMobileMatch) && isPasswordMatch)) {
         onLogin();
       } else {
         setError('Invalid faculty credentials. Please try again.');
@@ -134,7 +138,7 @@ export const FacultyLogin = ({ onLogin, settings }: FacultyLoginProps) => {
               <ShieldCheck className="text-white" size={32} />
             </div>
             <h2 className="text-3xl font-bold tracking-tight">Faculty Login</h2>
-            <p className="text-zinc-500 text-sm">Enter your username or mobile number to access the portal.</p>
+            <p className="text-zinc-500 text-sm">Enter your credentials to access the portal. (Default: admin / 1234)</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">

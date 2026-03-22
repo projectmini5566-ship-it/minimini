@@ -127,6 +127,12 @@ export const SettingsView = ({ settings, onUpdateSettings, onClearData, isLogged
               Faculty Credentials
             </h3>
             
+            <div className="bg-zinc-50 border border-zinc-100 rounded-2xl p-4 mb-6">
+              <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-1">Master Credentials</p>
+              <p className="text-zinc-900 text-sm font-medium">Username: <span className="font-bold">admin</span> | Password: <span className="font-bold">1234</span></p>
+              <p className="text-zinc-400 text-[10px] mt-1 italic">Note: These master credentials always work even if you change the settings below.</p>
+            </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase text-zinc-400 tracking-wider">Login Username</label>
