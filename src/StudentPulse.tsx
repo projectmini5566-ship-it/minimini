@@ -37,6 +37,27 @@ export const StudentPulse = ({ students, subjects, settings, tests, loggedInStud
     
   const upcomingExams = students.filter(s => new Date(s.nextExamDate) > new Date()).length;
   
+  // Calculate overall percentage for the logged-in student
+  const getOverallPercentage = () => {
+    if (!loggedInStudent || subjects.length === 0) return 0;
+    let totalObtained = 0;
+    let totalMax = 0;
+    subjects.forEach(sub => {
+      totalObtained += loggedInStudent.marks[sub.id] || 0;
+      totalMax += sub.maxMarks;
+    });
+    return (totalObtained / totalMax) * 100;
+  };
+
+  const overallPercentage = getOverallPercentage();
+  const getPerformanceZone = () => {
+    if (overallPercentage >= 75) return { label: 'Green Zone', color: 'bg-emerald-500', text: 'Excellent Performance', description: 'You are performing exceptionally well. Keep it up!' };
+    if (overallPercentage >= 50) return { label: 'Yellow Zone', color: 'bg-amber-500', text: 'Average Performance', description: 'You are doing okay, but there is room for improvement in some subjects.' };
+    return { label: 'Red Zone', color: 'bg-red-500', text: 'Needs Improvement', description: 'Your performance is currently below average. Please focus on your weak areas.' };
+  };
+
+  const zone = getPerformanceZone();
+
   const topStudent = [...students].sort((a, b) => {
     const gpaA = parseFloat(calculateGPA(a.marks, subjects));
     const gpaB = parseFloat(calculateGPA(b.marks, subjects));
@@ -69,7 +90,31 @@ export const StudentPulse = ({ students, subjects, settings, tests, loggedInStud
       </div>
 
       {loggedInStudent && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="space-y-6">
+          {/* Performance Zone Banner */}
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className={`p-6 rounded-[32px] border border-white/10 shadow-xl flex flex-col md:flex-row items-center gap-6 text-white ${zone.color}`}
+          >
+            <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shrink-0 backdrop-blur-sm">
+              <Award size={32} />
+            </div>
+            <div className="text-center md:text-left space-y-1">
+              <div className="flex flex-col md:flex-row md:items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">{zone.label}</span>
+                <span className="hidden md:block opacity-40">•</span>
+                <h3 className="text-xl font-bold">{zone.text}</h3>
+              </div>
+              <p className="text-sm opacity-90 max-w-xl">{zone.description}</p>
+            </div>
+            <div className="md:ml-auto text-center md:text-right">
+              <p className="text-4xl font-black">{overallPercentage.toFixed(0)}%</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest opacity-70">Overall Score</p>
+            </div>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <StatCard 
             icon={Award} 
             label="Your GPA" 
@@ -99,7 +144,8 @@ export const StudentPulse = ({ students, subjects, settings, tests, loggedInStud
             color="bg-amber-50 text-amber-600"
           />
         </div>
-      )}
+      </div>
+    )}
 
       {!loggedInStudent && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -169,9 +215,16 @@ export const StudentPulse = ({ students, subjects, settings, tests, loggedInStud
                   const percentage = (mainMark / sub.maxMarks) * 100;
                   let status = "Excellent";
                   let statusColor = "text-emerald-600 bg-emerald-50";
-                  if (percentage < 40) { status = "Critical"; statusColor = "text-red-600 bg-red-50"; }
-                  else if (percentage < 60) { status = "Needs Work"; statusColor = "text-amber-600 bg-amber-50"; }
-                  else if (percentage < 80) { status = "Good"; statusColor = "text-blue-600 bg-blue-50"; }
+                  if (percentage < 50) { 
+                    status = "Red Zone"; 
+                    statusColor = "text-red-600 bg-red-50"; 
+                  } else if (percentage < 75) { 
+                    status = "Yellow Zone"; 
+                    statusColor = "text-amber-600 bg-amber-50"; 
+                  } else { 
+                    status = "Green Zone"; 
+                    statusColor = "text-emerald-600 bg-emerald-50"; 
+                  }
 
                   return (
                     <tr key={sub.id} className="border-b border-zinc-50 last:border-0 hover:bg-zinc-50 transition-colors">
