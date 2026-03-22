@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Lock, User, ArrowRight, GraduationCap } from 'lucide-react';
+import { Student } from './types';
 
 interface StudentLoginProps {
-  onLogin: () => void;
+  onLogin: (studentId: string) => void;
+  students: Student[];
 }
 
-export const StudentLogin = ({ onLogin }: StudentLoginProps) => {
+export const StudentLogin = ({ onLogin, students }: StudentLoginProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -20,11 +22,17 @@ export const StudentLogin = ({ onLogin }: StudentLoginProps) => {
     // Mock authentication
     setTimeout(() => {
       setIsLoading(false);
-      // Simple mock check
-      if (username.length > 0 && password.length > 0) {
-        onLogin();
+      
+      // Find student by name and roll number
+      const student = students.find(s => 
+        s.name.toLowerCase() === username.trim().toLowerCase() && 
+        s.rollNo === password.trim()
+      );
+      
+      if (student) {
+        onLogin(student.id);
       } else {
-        setError('Invalid student credentials. Please try again.');
+        setError('Invalid credentials. Please enter your Name as username and Roll Number as password.');
       }
     }, 1500);
   };
@@ -42,7 +50,7 @@ export const StudentLogin = ({ onLogin }: StudentLoginProps) => {
               <GraduationCap className="text-white" size={32} />
             </div>
             <h2 className="text-3xl font-bold tracking-tight">Student Login</h2>
-            <p className="text-zinc-500 text-sm">Enter your roll number and password to view your marks.</p>
+            <p className="text-zinc-500 text-sm">Enter your Name and Roll Number to view your marks.</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
@@ -57,7 +65,7 @@ export const StudentLogin = ({ onLogin }: StudentLoginProps) => {
             )}
 
             <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase text-zinc-400 ml-1">Roll Number / ID</label>
+              <label className="text-[10px] font-bold uppercase text-zinc-400 ml-1">Student Name</label>
               <div className="relative">
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
                 <input 
@@ -65,14 +73,14 @@ export const StudentLogin = ({ onLogin }: StudentLoginProps) => {
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="e.g. 201"
+                  placeholder="Your Full Name"
                   className="w-full pl-12 pr-4 py-4 bg-zinc-50 border-none focus:ring-2 focus:ring-blue-600 rounded-2xl text-sm transition-all"
                 />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase text-zinc-400 ml-1">Password</label>
+              <label className="text-[10px] font-bold uppercase text-zinc-400 ml-1">Roll Number (Password)</label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
                 <input 
@@ -80,7 +88,7 @@ export const StudentLogin = ({ onLogin }: StudentLoginProps) => {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="e.g. 201"
                   className="w-full pl-12 pr-4 py-4 bg-zinc-50 border-none focus:ring-2 focus:ring-blue-600 rounded-2xl text-sm transition-all"
                 />
               </div>

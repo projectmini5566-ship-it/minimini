@@ -49,7 +49,7 @@ const INITIAL_STUDENTS: Student[] = [
   }
 ];
 
-const BASE_URL = 'http://localhost:5000/api';
+const BASE_URL = '/api';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('pulse');
@@ -59,14 +59,13 @@ export default function App() {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isStudentLoggedIn, setIsStudentLoggedIn] = useState(false);
+  const [loggedInStudentId, setLoggedInStudentId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Load from backend API
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setIsLoading(true);
-        
         // Fetch all data in parallel
         const [studentsRes, subjectsRes, testsRes, settingsRes] = await Promise.all([
           fetch(`${BASE_URL}/students`),
@@ -80,13 +79,6 @@ export default function App() {
         if (testsRes.ok) setTests(await testsRes.json());
         if (settingsRes.ok) setSettings(await settingsRes.json());
 
-        // Check login status from local storage (or session)
-        const savedLogin = localStorage.getItem('edupulse_is_logged_in');
-        if (savedLogin === 'true') setIsLoggedIn(true);
-        
-        const savedStudentLogin = localStorage.getItem('edupulse_is_student_logged_in');
-        if (savedStudentLogin === 'true') setIsStudentLoggedIn(true);
-
       } catch (error) {
         console.error("Failed to fetch data from backend", error);
       } finally {
@@ -95,6 +87,20 @@ export default function App() {
     };
 
     fetchData();
+
+    // Check login status from local storage (or session)
+    const savedLogin = localStorage.getItem('edupulse_is_logged_in');
+    if (savedLogin === 'true') setIsLoggedIn(true);
+    
+    const savedStudentLogin = localStorage.getItem('edupulse_is_student_logged_in');
+    if (savedStudentLogin === 'true') {
+      setIsStudentLoggedIn(true);
+      setLoggedInStudentId(localStorage.getItem('edupulse_student_id'));
+    }
+
+    // Set up polling to keep data in sync with backend
+    const interval = setInterval(fetchData, 5000); // Poll every 5 seconds
+    return () => clearInterval(interval);
   }, []);
 
   const handleUpdateStudents = async (updated: Student[]) => {
@@ -165,16 +171,20 @@ export default function App() {
     localStorage.setItem('edupulse_is_logged_in', 'true');
   };
 
-  const handleStudentLogin = () => {
+  const handleStudentLogin = (studentId: string) => {
     setIsStudentLoggedIn(true);
+    setLoggedInStudentId(studentId);
     localStorage.setItem('edupulse_is_student_logged_in', 'true');
+    localStorage.setItem('edupulse_student_id', studentId);
   };
 
   const handleLogout = () => {
     setIsLoggedIn(false);
     setIsStudentLoggedIn(false);
+    setLoggedInStudentId(null);
     localStorage.removeItem('edupulse_is_logged_in');
     localStorage.removeItem('edupulse_is_student_logged_in');
+    localStorage.removeItem('edupulse_student_id');
     setActiveTab('pulse');
   };
 
@@ -182,9 +192,17 @@ export default function App() {
     switch (activeTab) {
       case 'pulse':
         if (!isStudentLoggedIn && !isLoggedIn) {
-          return <StudentLogin onLogin={handleStudentLogin} />;
+          return <StudentLogin onLogin={handleStudentLogin} students={students} />;
         }
-        return <StudentPulse students={students} subjects={subjects} settings={settings} />;
+        return (
+          <StudentPulse 
+            students={students} 
+            subjects={subjects} 
+            settings={settings} 
+            tests={tests}
+            loggedInStudentId={loggedInStudentId}
+          />
+        );
       case 'input':
         if (!isLoggedIn) {
           return <FacultyLogin onLogin={handleLogin} settings={settings} />;
@@ -194,16 +212,18 @@ export default function App() {
             students={students} 
             subjects={subjects}
             tests={tests}
+            settings={settings}
             onUpdateStudents={handleUpdateStudents} 
             onUpdateSubjects={handleUpdateSubjects}
             onUpdateTests={handleUpdateTests}
+            onUpdateSettings={handleUpdateSettings}
           />
         );
       case 'graph':
         if (!isStudentLoggedIn && !isLoggedIn) {
-          return <StudentLogin onLogin={handleStudentLogin} />;
+          return <StudentLogin onLogin={handleStudentLogin} students={students} />;
         }
-        return <GraphView students={students} subjects={subjects} tests={tests} />;
+        return <GraphView students={students} subjects={subjects} tests={tests} settings={settings} />;
       case 'settings':
         return (
           <SettingsView 
@@ -216,7 +236,15 @@ export default function App() {
           />
         );
       default:
-        return <StudentPulse students={students} subjects={subjects} settings={settings} />;
+        return (
+          <StudentPulse 
+            students={students} 
+            subjects={subjects} 
+            settings={settings} 
+            tests={tests}
+            loggedInStudentId={loggedInStudentId}
+          />
+        );
     }
   };
 

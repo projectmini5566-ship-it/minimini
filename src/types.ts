@@ -19,6 +19,7 @@ export interface Student {
   rollNo: string;
   div: string;
   marks: Record<string, number>; // key is subject id
+  sportMarks?: number;
   nextExamDate: string;
 }
 
@@ -38,6 +39,7 @@ export interface AppSettings {
   facultyUsername: string;
   facultyPassword: string;
   facultyMobile: string;
+  maxSportsMarks: number;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -46,5 +48,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   academicYear: '2025-26',
   facultyUsername: 'ghadigaonkar sir',
   facultyPassword: '5566',
-  facultyMobile: '9876543210'
+  facultyMobile: '9876543210',
+  maxSportsMarks: 100
 };

@@ -158,6 +158,17 @@ export const SettingsView = ({ settings, onUpdateSettings, onClearData, isLogged
                   placeholder="••••••••"
                 />
               </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-[10px] font-bold uppercase text-zinc-400 tracking-wider">Max Sports Marks</label>
+                <input 
+                  type="number"
+                  className="w-full bg-zinc-50 border-none focus:ring-2 focus:ring-black rounded-xl px-4 py-3 font-medium transition-all"
+                  value={localSettings.maxSportsMarks}
+                  onChange={(e) => setLocalSettings({ ...localSettings, maxSportsMarks: parseInt(e.target.value) || 100 })}
+                  placeholder="100"
+                />
+              </div>
             </div>
           </div>
         )}

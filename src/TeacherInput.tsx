@@ -1,30 +1,63 @@
-import { useState } from 'react';
-import { Student, SubjectConfig, Test } from './types';
+import { useState, useEffect } from 'react';
+import { Student, SubjectConfig, Test, AppSettings } from './types';
 import { cn } from './lib/utils';
-import { Save, Plus, Trash2, Users, BookOpen, Table2, ClipboardList } from 'lucide-react';
+import { Save, Plus, Trash2, Users, BookOpen, Table2, ClipboardList, Trophy, CheckCircle, RefreshCw, Clock } from 'lucide-react';
 
 interface TeacherInputProps {
   students: Student[];
   subjects: SubjectConfig[];
   tests: Test[];
+  settings: AppSettings;
   onUpdateStudents: (students: Student[]) => void;
   onUpdateSubjects: (subjects: SubjectConfig[]) => void;
   onUpdateTests: (tests: Test[]) => void;
+  onUpdateSettings: (settings: AppSettings) => void;
 }
 
 export const TeacherInput = ({ 
   students, 
   subjects, 
   tests, 
+  settings,
   onUpdateStudents, 
   onUpdateSubjects,
-  onUpdateTests 
+  onUpdateTests,
+  onUpdateSettings
 }: TeacherInputProps) => {
-  const [view, setView] = useState<'marks' | 'manage' | 'tests'>('marks');
+  const [view, setView] = useState<'marks' | 'manage' | 'tests' | 'sports'>('marks');
   const [localStudents, setLocalStudents] = useState<Student[]>(students);
   const [localSubjects, setLocalSubjects] = useState<SubjectConfig[]>(subjects);
   const [localTests, setLocalTests] = useState<Test[]>(tests);
+  const [localSettings, setLocalSettings] = useState<AppSettings>(settings);
   const [activeTestId, setActiveTestId] = useState<string | null>(tests[0]?.id || null);
+  const [isSaved, setIsSaved] = useState(false);
+  const [lastSaved, setLastSaved] = useState<string | null>(localStorage.getItem('edupulse_last_saved'));
+
+  // Sync local state with props if they change (e.g. from polling)
+  // But only if there are no unsaved changes to avoid overwriting user input
+  useEffect(() => {
+    const hasUnsavedChanges = 
+      JSON.stringify(localStudents) !== JSON.stringify(students) ||
+      JSON.stringify(localSubjects) !== JSON.stringify(subjects) ||
+      JSON.stringify(localTests) !== JSON.stringify(tests) ||
+      JSON.stringify(localSettings) !== JSON.stringify(settings);
+
+    if (!hasUnsavedChanges) {
+      setLocalStudents(students);
+      setLocalSubjects(subjects);
+      setLocalTests(tests);
+      setLocalSettings(settings);
+    }
+  }, [students, subjects, tests, settings]);
+
+  const handleSync = () => {
+    setLocalStudents(students);
+    setLocalSubjects(subjects);
+    setLocalTests(tests);
+    setLocalSettings(settings);
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 2000);
+  };
 
   // --- Marks Handlers ---
   const handleMarkChange = (studentId: string, subjectId: string, value: string) => {
@@ -34,6 +67,14 @@ export const TeacherInput = ({
       s.id === studentId 
         ? { ...s, marks: { ...s.marks, [subjectId]: numValue } }
         : s
+    );
+    setLocalStudents(updated);
+  };
+
+  const handleSportMarkChange = (studentId: string, value: string) => {
+    const numValue = parseInt(value) || 0;
+    const updated = localStudents.map(s => 
+      s.id === studentId ? { ...s, sportMarks: numValue } : s
     );
     setLocalStudents(updated);
   };
@@ -53,6 +94,7 @@ export const TeacherInput = ({
       rollNo: '',
       div: '',
       marks: {},
+      sportMarks: 0,
       nextExamDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     };
     setLocalStudents([...localStudents, newStudent]);
@@ -131,13 +173,20 @@ export const TeacherInput = ({
     onUpdateStudents(localStudents);
     onUpdateSubjects(localSubjects);
     onUpdateTests(localTests);
+    onUpdateSettings(localSettings);
+    
+    const now = new Date().toLocaleTimeString();
+    setLastSaved(now);
+    localStorage.setItem('edupulse_last_saved', now);
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 3000);
   };
 
   const hasErrors = localStudents.some(student => 
     localSubjects.some(subject => {
       const mark = student.marks[subject.id] || 0;
       return mark < 0 || mark > subject.maxMarks;
-    })
+    }) || (student.sportMarks !== undefined && (student.sportMarks < 0 || student.sportMarks > localSettings.maxSportsMarks))
   ) || localTests.some(test => 
     (Object.values(test.marks) as number[]).some(mark => mark < 0 || mark > test.maxMarks)
   );
@@ -181,20 +230,47 @@ export const TeacherInput = ({
             Tests
           </button>
           <button 
+            onClick={() => setView('sports')}
+            className={cn(
+              "flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium text-sm",
+              view === 'sports' ? "bg-black text-white" : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+            )}
+          >
+            <Trophy size={18} />
+            Sports
+          </button>
+          <button 
             onClick={handleSave}
             disabled={hasErrors}
             className={cn(
-              "flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium text-sm shadow-sm",
-              hasErrors 
-                ? "bg-zinc-200 text-zinc-400 cursor-not-allowed" 
-                : "bg-emerald-600 text-white hover:bg-emerald-700"
+              "flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2 rounded-lg transition-all font-bold text-sm shadow-sm",
+              isSaved 
+                ? "bg-emerald-500 text-white" 
+                : hasErrors 
+                  ? "bg-zinc-200 text-zinc-400 cursor-not-allowed" 
+                  : "bg-black text-white hover:bg-zinc-800 active:scale-95"
             )}
           >
-            <Save size={18} />
-            {hasErrors ? 'Fix Errors' : 'Save All'}
+            {isSaved ? <CheckCircle size={18} /> : <Save size={18} />}
+            {isSaved ? "Saved!" : hasErrors ? "Fix Errors" : "Save All"}
+          </button>
+          <button 
+            onClick={handleSync}
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-zinc-100 text-zinc-600 hover:bg-zinc-200 transition-colors font-medium text-sm"
+            title="Sync with server"
+          >
+            <RefreshCw size={18} className={cn(isSaved && "animate-spin")} />
+            Sync
           </button>
         </div>
       </div>
+
+      {lastSaved && (
+        <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-4">
+          <Clock size={12} />
+          Last Saved: {lastSaved}
+        </div>
+      )}
 
       {view === 'marks' ? (
         <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm">
@@ -245,6 +321,87 @@ export const TeacherInput = ({
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      ) : view === 'sports' ? (
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                <Trophy size={24} />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg">Sports Performance</h3>
+                <p className="text-zinc-500 text-xs">Input extra-curricular achievements for all students.</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 bg-zinc-50 px-4 py-2 rounded-xl border border-zinc-100">
+              <label className="text-xs font-bold uppercase text-zinc-400">Max Sports Marks:</label>
+              <input 
+                type="number"
+                value={localSettings.maxSportsMarks}
+                onChange={(e) => setLocalSettings({ ...localSettings, maxSportsMarks: parseInt(e.target.value) || 100 })}
+                className="w-16 bg-white border border-zinc-200 rounded px-2 py-1 text-sm font-mono font-bold text-emerald-600 focus:ring-2 focus:ring-emerald-500 outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-sm">
+                <thead>
+                  <tr className="bg-zinc-50 border-b border-zinc-200">
+                    <th className="px-4 py-3 text-left font-semibold text-zinc-600 border-r border-zinc-200 w-16">Roll</th>
+                    <th className="px-4 py-3 text-left font-semibold text-zinc-600 border-r border-zinc-200 w-48">Student Name</th>
+                    <th className="px-4 py-3 text-center font-semibold text-zinc-600">
+                      Sports Marks (Max: {localSettings.maxSportsMarks})
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {localStudents.map((student) => {
+                    const mark = student.sportMarks || 0;
+                    const isInvalid = mark < 0 || mark > localSettings.maxSportsMarks;
+                    return (
+                      <tr key={student.id} className="border-b border-zinc-100 hover:bg-zinc-50 transition-colors">
+                        <td className="px-4 py-2 border-r border-zinc-100 font-mono text-zinc-400">{student.rollNo}</td>
+                        <td className="px-4 py-2 border-r border-zinc-100 font-medium">{student.name}</td>
+                        <td className={cn(
+                          "px-4 py-2 transition-colors",
+                          isInvalid && "bg-red-50"
+                        )}>
+                          <div className="flex items-center justify-center gap-4">
+                            <input 
+                              type="number" 
+                              value={student.sportMarks || 0}
+                              onChange={(e) => handleSportMarkChange(student.id, e.target.value)}
+                              className={cn(
+                                "w-24 bg-zinc-50 border border-zinc-100 text-center focus:ring-2 rounded-lg px-2 py-2 font-mono text-lg font-bold",
+                                isInvalid ? "text-red-600 border-red-200 focus:ring-red-500" : "text-emerald-600 focus:ring-emerald-500"
+                              )}
+                              min="0"
+                              max={localSettings.maxSportsMarks}
+                            />
+                            <div className="w-32 h-2 bg-zinc-100 rounded-full overflow-hidden">
+                              <div 
+                                className={cn(
+                                  "h-full transition-all duration-500",
+                                  isInvalid ? "bg-red-500" : "bg-emerald-500"
+                                )}
+                                style={{ width: `${Math.min(100, Math.max(0, (mark / localSettings.maxSportsMarks) * 100))}%` }}
+                              />
+                            </div>
+                            <span className="text-[10px] font-bold text-zinc-400 w-8">
+                              {Math.round((mark / localSettings.maxSportsMarks) * 100)}%
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       ) : view === 'manage' ? (
@@ -428,7 +585,7 @@ export const TeacherInput = ({
             {activeTestId ? (
               <>
                 <div className="bg-white p-6 rounded-2xl border border-zinc-200 shadow-sm space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold uppercase text-zinc-400">Test Name</label>
                       <input 
@@ -450,6 +607,17 @@ export const TeacherInput = ({
                         ))}
                       </select>
                     </div>
+                    {localTests.find(t => t.id === activeTestId)?.subjectId && (
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold uppercase text-zinc-400">Rename Subject</label>
+                        <input 
+                          className="w-full bg-zinc-50 border-none focus:ring-2 focus:ring-black rounded-lg px-3 py-2 font-bold"
+                          value={localSubjects.find(s => s.id === localTests.find(t => t.id === activeTestId)?.subjectId)?.label || ''}
+                          onChange={(e) => handleSubjectChange(localTests.find(t => t.id === activeTestId)!.subjectId, 'label', e.target.value)}
+                          placeholder="Subject Name"
+                        />
+                      </div>
+                    )}
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold uppercase text-zinc-400">Max Marks</label>
                       <input 
